@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import SearchBar from './SearchBar'; // Import the SearchBar component
+import SearchBar from './SearchBar';
+
+const apiUrl = import.meta.env.VITE_API_URL;
+
 
 const JobList = ({ onSelectJob }) => {
   const [jobs, setJobs] = useState([]);
@@ -9,41 +12,41 @@ const JobList = ({ onSelectJob }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch jobs when the search query or page changes
+
   useEffect(() => {
     const fetchJobs = async () => {
-      setLoading(true);
-      try {
-        let url = `http://localhost:5000/api/jobs/get?page=${currentPage}&limit=20`;
-
-        if (searchQuery) {
-          url = `http://localhost:5000/api/jobs/search?location=${searchQuery}`;
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        
-        if (data.jobs) {
-          if (currentPage === 1 && !searchQuery) {
-            setJobs(data.jobs); // Reset jobs if it's the first page without a search query
-          } else {
-            setJobs((prevJobs) => [...prevJobs, ...data.jobs]); // Append jobs for pagination
+        setLoading(true);
+        try {
+          let url = `${apiUrl}/api/jobs/get?page=${currentPage}&limit=20`;
+      
+          if (searchQuery) {
+            url = `${apiUrl}/api/jobs/search?location=${searchQuery}`;
           }
-          setTotalPages(data.totalPages || 1); // Set total pages (add a fallback in case it's missing)
-        } else {
-          setError('No jobs found');
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+      
+          const data = await response.json();
+      
+          if (data.jobs) {
+            if (currentPage === 1 && !searchQuery) {
+              setJobs(data.jobs); 
+            } else {
+              setJobs((prevJobs) => [...prevJobs, ...data.jobs]); 
+            }
+            setTotalPages(data.totalPages || 1);
+          } else {
+            setError('No jobs found');
+          }
+        } catch (err) {
+          console.error('Error fetching jobs:', err);
+          setError('Failed to load jobs');
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('Error fetching jobs:', err);
-        setError('Failed to load jobs');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
+      
 
     fetchJobs();
   }, [currentPage, searchQuery]);
@@ -62,10 +65,7 @@ const JobList = ({ onSelectJob }) => {
 
   return (
     <div className="p-4">
-      {/* Search bar */}
       <SearchBar searchQuery={searchQuery} onSearchChange={handleSearchChange} />
-
-      {/* Loading, error, or jobs display */}
       {loading ? (
         <div className="text-center text-gray-500">Loading...</div>
       ) : error ? (
@@ -76,7 +76,7 @@ const JobList = ({ onSelectJob }) => {
         <div className="space-y-4">
           {jobs.map((job) => (
             <div
-              key={job._id}  // Use job._id for unique key (if job.id is not unique)
+              key={job._id} 
               onClick={() => onSelectJob(job)}
               className="border border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
@@ -91,8 +91,6 @@ const JobList = ({ onSelectJob }) => {
           ))}
         </div>
       )}
-
-      {/* Load More Button */}
       {!loading && jobs.length > 0 && currentPage < totalPages && (
         <div className="mt-4 text-center">
           <button

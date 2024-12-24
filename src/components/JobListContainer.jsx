@@ -74,7 +74,7 @@ const JobDetail = ({ job }) => {
         </div>
       </div>
 
-      {/* Qualifications */}
+
       {job.qualifications && (
         <div className="mb-4">
           <h2 className="text-sm font-semibold mb-2">Qualifications</h2>
@@ -91,13 +91,7 @@ const JobDetail = ({ job }) => {
         </div>
       )}
 
-      {/* Job Description */}
-      <div>
-        <h2 className="text-sm font-semibold mb-2">Full Job Description</h2>
-        <div className="text-sm text-gray-600 whitespace-pre-wrap">
-          {job.description}
-        </div>
-      </div>
+  
     </div>
   );
 };
