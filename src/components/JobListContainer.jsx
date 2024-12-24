@@ -51,7 +51,7 @@ const JobDetail = ({ job }) => {
             <Share2 className="w-5 h-5 text-gray-500" />
           </button>
           <button 
-            onClick={() => window.open(job.applyUrl, '_blank')}
+            onClick={() => alert("i said hii")}
             className="px-4 py-2 bg-purple-600 text-white rounded-full text-sm font-medium hover:bg-purple-700"
           >
             Quick Apply

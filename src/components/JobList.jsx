@@ -1,72 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import SearchBar from './SearchBar';
+import { useEffect, useState } from "react";
+import SearchBar from "../components/SearchBar.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL;
-
 
 const JobList = ({ onSelectJob }) => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSubmitted, setSearchSubmitted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const fetchJobs = async (query = "", page = 1) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const limit = 20;
+      let url = `${apiUrl}/api/jobs/get?page=${page}&limit=${limit}`;
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-        setLoading(true);
-        try {
-          let url = `${apiUrl}/api/jobs/get?page=${currentPage}&limit=20`;
-      
-          if (searchQuery) {
-            url = `${apiUrl}/api/jobs/search?location=${searchQuery}`;
-          }
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-      
-          const data = await response.json();
-      
-          if (data.jobs) {
-            if (currentPage === 1 && !searchQuery) {
-              setJobs(data.jobs); 
-            } else {
-              setJobs((prevJobs) => [...prevJobs, ...data.jobs]); 
-            }
-            setTotalPages(data.totalPages || 1);
-          } else {
-            setError('No jobs found');
-          }
-        } catch (err) {
-          console.error('Error fetching jobs:', err);
-          setError('Failed to load jobs');
-        } finally {
-          setLoading(false);
-        }
-      };
-      
+      if (query) {
+        url = `${apiUrl}/api/jobs/search?location=${encodeURIComponent(query)}&page=${page}&limit=${limit}`;
+      }
 
-    fetchJobs();
-  }, [currentPage, searchQuery]);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      
+      if (page === 1) {
+        setJobs(data.jobs);
+      } else {
+        setJobs(prev => [...prev, ...data.jobs]);
+      }
+      
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+      setError("Failed to load jobs");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    setSearchSubmitted(true);
     setCurrentPage(1);
     setJobs([]);
+    fetchJobs(searchQuery, 1);
   };
+
+  useEffect(() => {
+    if (currentPage > 1) {
+      if (searchSubmitted) {
+        fetchJobs(searchQuery, currentPage);
+      } else {
+        fetchJobs("", currentPage);
+      }
+    } else if (!searchSubmitted) {
+      fetchJobs("", currentPage);
+    }
+  }, [currentPage, searchSubmitted, searchQuery]);
 
   const loadMoreJobs = () => {
     if (currentPage < totalPages) {
-      setCurrentPage((prevPage) => prevPage + 1);
+      setCurrentPage(prevPage => prevPage + 1);
     }
   };
 
   return (
     <div className="p-4">
-      <SearchBar searchQuery={searchQuery} onSearchChange={handleSearchChange} />
-      {loading ? (
+      <SearchBar
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        onSearchSubmit={handleSearchSubmit}
+      />
+      {loading && currentPage === 1 ? (
         <div className="text-center text-gray-500">Loading...</div>
       ) : error ? (
         <div className="text-center text-red-500">{error}</div>
@@ -76,7 +91,7 @@ const JobList = ({ onSelectJob }) => {
         <div className="space-y-4">
           {jobs.map((job) => (
             <div
-              key={job._id} 
+              key={job._id}
               onClick={() => onSelectJob(job)}
               className="border border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
@@ -89,6 +104,9 @@ const JobList = ({ onSelectJob }) => {
               </div>
             </div>
           ))}
+          {loading && currentPage > 1 && (
+            <div className="text-center text-gray-500">Loading more...</div>
+          )}
         </div>
       )}
       {!loading && jobs.length > 0 && currentPage < totalPages && (
