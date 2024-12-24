@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SearchBar from './SearchBar'; // Import the SearchBar component
 
 const JobList = ({ onSelectJob }) => {
   const [jobs, setJobs] = useState([]);
@@ -11,53 +12,47 @@ const JobList = ({ onSelectJob }) => {
   // Fetch jobs when the search query or page changes
   useEffect(() => {
     const fetchJobs = async () => {
-        setLoading(true);
-        try {
-          // Construct the URL based on whether there's a search query or not
-          let url = `http://localhost:5000/api/jobs/get?page=${currentPage}&limit=20`;
-      
-          // Update the URL for the search query
-          if (searchQuery) {
-            console.log(searchQuery,"sada")
-            url = `http://localhost:5000/api/jobs/search?location=${searchQuery}`;
-          }
-      
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-      
-          const data = await response.json();
-          console.log(data);  // Log the data to check if it's coming from the backend
-          
-          if (data.jobs) {
-            if (currentPage === 1 && !searchQuery) {
-              setJobs(data.jobs); // Reset jobs if it's the first page without a search query
-            } else {
-              setJobs((prevJobs) => [...prevJobs, ...data.jobs]); // Append jobs for pagination
-            }
-            setTotalPages(data.totalPages || 1); // Set total pages (add a fallback in case it's missing)
-          } else {
-            setError('No jobs found');
-          }
-        } catch (err) {
-          console.error('Error fetching jobs:', err);
-          setError('Failed to load jobs');
-        } finally {
-          setLoading(false);
+      setLoading(true);
+      try {
+        let url = `http://localhost:5000/api/jobs/get?page=${currentPage}&limit=20`;
+
+        if (searchQuery) {
+          url = `http://localhost:5000/api/jobs/search?location=${searchQuery}`;
         }
-      };
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        
+        if (data.jobs) {
+          if (currentPage === 1 && !searchQuery) {
+            setJobs(data.jobs); // Reset jobs if it's the first page without a search query
+          } else {
+            setJobs((prevJobs) => [...prevJobs, ...data.jobs]); // Append jobs for pagination
+          }
+          setTotalPages(data.totalPages || 1); // Set total pages (add a fallback in case it's missing)
+        } else {
+          setError('No jobs found');
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        setError('Failed to load jobs');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     fetchJobs();
   }, [currentPage, searchQuery]);
-
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
     setJobs([]);
   };
-
 
   const loadMoreJobs = () => {
     if (currentPage < totalPages) {
@@ -68,15 +63,7 @@ const JobList = ({ onSelectJob }) => {
   return (
     <div className="p-4">
       {/* Search bar */}
-      <div className="mb-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          placeholder="Search by location"
-          className="p-2 border border-gray-300 rounded w-full"
-        />
-      </div>
+      <SearchBar searchQuery={searchQuery} onSearchChange={handleSearchChange} />
 
       {/* Loading, error, or jobs display */}
       {loading ? (
